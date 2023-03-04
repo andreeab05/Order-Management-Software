@@ -1,0 +1,61 @@
+        - TEMA 2 APD - Manager de comenzi de Black Friday in Java -
+Student: Borbei Andreea
+Grupa: 333CC
+
+ - Implementare:
+    Am ales sa realizez o implementare a modelului Replicated Workers folosind
+ interfata ExecutorService din Java. Am folosit 2 thread pool-uri, in fiecare
+ putand lucra la un moment dat maxim P thread-uri: un thread pool unde se vor
+ introduce task-uri pentru comenzi ce vor fi rezolvate de thread-urile de
+ nivel 1 si al doilea thread pool pentru task-urile pentru produse, rezolvate
+ de thread-urile de nivel 2. Thread-urile de nivel 1 introduc task-uri pentru
+ cele de nivel 2.
+
+    In clasa Tema2, in metoda main deschid fisierele de intrare de unde vor fi
+ citite comenzile si produsele. Creez si deschid fisierele de output
+ (orders_out.txt si order_products_out.txt). Tot aici declar si instantiez cele
+ doua pool-uri pentru task-uri(tpe si secondaryTpe). Voi introduce in pool-ul
+ de nivel 1 (tpe) P task-uri pentru ca cele P thread-uri sa inceapa procesarea
+ comenzilor. Pentru citirea fisierelor de intrare am folosit clasa
+ BufferedReader deoarece este thread-safe (deci nu va permite ca 2 sau mai
+ multe thread-uri sa citeasca din fisier in acelasi moment). Astfel nu vor fi
+ citite comenzi duplicat. Similar, din aceleasi considerente, am folosit pentru
+ scrierea in fisierele de iesire clasa BufferedWriter. Atat thread-urile de
+ nivel 1, cat si cele de nivel 2 vor folosi pentru scriere aceleasi obiecte
+ (ordersStatusWriter si productsStatusWriter). De asemenea, am folosit
+ un AtomicInteger declarat static (leftTasks) cu care voi contoriza cate
+ task-uri de comenzi (pentru thread-uri de nivel 1) mai sunt de rezolvat.
+  In functie de valoarea acestuia (atunci cand devine 0) voi inchide cele
+ 2 pool-uri si fisierele de iesire si de intrare.
+ Pentru fiecare task pentru comanda, valoarea acestuia se va incrementa,
+ iar la finalizarea unui task pentru comanda se va decrementa.
+
+    In clasa OrderTask, thread-ul citeste linia curenta, daca exista. Aceasta
+ este impartita in orderID si noProducts (numarul de produse din comanda).
+ Daca numarul de produse din comanda este mai mare decat 0, comanda este
+ "prelucrata": folosesc un counter pentru a specifica thread-urilor de nivel 2
+ al catelea produs din comanda ar trebui procesat (de exemplu counter va avea
+ valoarea 1 pentru primul produs din comanda respectiva, 2 pentru al doilea,
+ samd).Pentru fiecare produs se va adauga in pool-ul al doilea un task nou.
+ Pentru a realiza sincronizarea dintre un thread de nivel 1 si thread-urile
+ de nivel 2 am folosit CountDownLatch al carui counter va avea valoarea
+ noProducts si va fi decrementat la rezolvarea fiecarui task pentru produse.
+ La finalizarea unei comenzi, fie ea cu numar de produse mai mare sau egal
+ cu 0, valoarea leftTasks este decrementata.
+ Se face scrierea in fisierul de iesire.
+    Daca linia curenta citita din fisier este null (nu mai exista comenzi),
+ leftTasks este decrementat si se iese din metoda.
+    Dupa prelucrarea unei comenzi, se adauga un nou task pentru urmatoarea
+ comanda. Astfel fiecare thread va adauga o comanda noua in pool doar cand
+ este disponibil sa o preia.
+    La final se verifica valoarea variabilei leftTasks: daca aceasta are
+ valoarea 0, inseamna ca toate task-urile de nivel 1 (cele pentru comenzi)
+ s-au incheiat deci se pot inchide cele doua pool-uri si fisierele de iesire.
+
+    In clasa ProductTask, thread-ul va cauta, citind linie cu linie fisierul
+ de produse, produsul pe care il are de procesat in functie de index-ul si de
+ orderID-ul primite in constructor. Dupa citire, se realizeaza scrierea in
+ fisierul de iesire, apoi se decrementeaza contorul pentru CountDownLatch
+ (primit si el prin constructor).
+
+
